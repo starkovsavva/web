@@ -1,69 +1,91 @@
 import { InputHandler } from './input.js';
 import { Renderer } from './render.js';
+import { recordScore, showLeaderboardOverlay, hideLeaderboardOverlay } from './leaderboard.js';
+import { GAME_SETTINGS, PIECE_SET } from './config.js';
+import { getActivePalette } from './theme.js';
 
 export class TetrisGame {
-  constructor() {
+  constructor(options = {}) {
     this.canvas = document.getElementById('game-board');
     this.ctx = this.canvas.getContext('2d');
 
-    this.BLOCK_SIZE = 30;
-    this.BOARD_WIDTH = 10;
-    this.BOARD_HEIGHT = 20;
+    const settings = { ...GAME_SETTINGS, ...options };
 
-    this.board = Array(this.BOARD_HEIGHT).fill().map(() => Array(this.BOARD_WIDTH).fill(0));
+    this.BLOCK_SIZE = settings.blockSize;
+    this.BOARD_WIDTH = settings.boardWidth;
+    this.BOARD_HEIGHT = settings.boardHeight;
+    this.baseDropSpeed = settings.baseDropSpeed;
+    this.minDropSpeed = settings.minDropSpeed;
+    this.dropAcceleration = settings.dropAcceleration;
+    this.linePoints = settings.linePoints;
+
+    this.board = this.createEmptyBoard();
     this.currentPiece = null;
-    this.nextPiece = null;
+    this.nextPieceTemplate = null;
     this.score = 0;
     this.level = 1;
     this.lines = 0;
     this.isGameOver = false;
     this.isPaused = false;
-    this.dropInterval = null;
     this.lastDropTime = 0;
-    this.dropSpeed = 1000;
+    this.dropSpeed = this.baseDropSpeed;
+  this.animationFrameId = null;
 
-    this.colors = [
-      '#000000', '#00FFFF', '#FFFF00', '#800080',
-      '#0000FF', '#FFA500', '#00FF00', '#FF0000'
-    ];
-
-    this.pieces = [
-      { shape: [[1,1,1,1]], color: 1 },
-      { shape: [[2,2],[2,2]], color: 2 },
-      { shape: [[0,3,0],[3,3,3]], color: 3 },
-      { shape: [[4,0,0],[4,4,4]], color: 4 },
-      { shape: [[0,0,5],[5,5,5]], color: 5 },
-      { shape: [[0,6,6],[6,6,0]], color: 6 },
-      { shape: [[7,7,0],[0,7,7]], color: 7 }
-    ];
+    this.colors = [...getActivePalette()];
+    this.pieceTemplates = PIECE_SET;
 
     this.renderer = new Renderer(this);
     this.inputHandler = new InputHandler(this);
+
+    this.themeChangeHandler = () => {
+      this.updatePalette(getActivePalette());
+    };
+    window.addEventListener('tetris-theme-change', this.themeChangeHandler);
 
     this.initializeGame();
   }
 
   initializeGame() {
     console.log("🔄 Инициализация игры...");
+    this.prepareNextPiece();
     this.createNewPiece();
     this.startGameLoop();
     this.inputHandler.setupEventListeners();
     this.updateUI();
   }
 
-  createNewPiece() {
-    const piece = this.nextPiece || this.pieces[Math.floor(Math.random() * this.pieces.length)];
-    this.currentPiece = {
-      shape: piece.shape.map(row => [...row]),
-      color: piece.color,
-      x: Math.floor((this.BOARD_WIDTH - piece.shape[0].length) / 2),
-      y: 0
-    };
-    this.generateNextPiece();
+  createEmptyBoard() {
+    return Array.from({ length: this.BOARD_HEIGHT }, () => Array(this.BOARD_WIDTH).fill(0));
   }
 
-  generateNextPiece() {
-    this.nextPiece = this.pieces[Math.floor(Math.random() * this.pieces.length)];
+  getRandomPieceTemplate() {
+    const index = Math.floor(Math.random() * this.pieceTemplates.length);
+    return this.pieceTemplates[index];
+  }
+
+  cloneMatrix(matrix) {
+    return matrix.map((row) => [...row]);
+  }
+
+  prepareNextPiece() {
+    this.nextPieceTemplate = this.getRandomPieceTemplate();
+    if (this.renderer) {
+      this.renderer.renderNextPiece(this.nextPieceTemplate);
+    }
+  }
+
+  createNewPiece() {
+    const template = this.nextPieceTemplate ?? this.getRandomPieceTemplate();
+    const shape = this.cloneMatrix(template.matrix);
+
+    this.currentPiece = {
+      shape,
+      color: template.colorIndex,
+      x: Math.floor((this.BOARD_WIDTH - shape[0].length) / 2),
+      y: 0
+    };
+
+    this.prepareNextPiece();
   }
 
   startGameLoop() {
@@ -73,20 +95,21 @@ export class TetrisGame {
   }
 
   gameLoop = (currentTime = 0) => {
-    if (this.isGameOver) {
-      this.renderer.renderGameOver();
-      return;
-    }
-
     if (!this.isPaused) {
       if (currentTime - this.lastDropTime > this.dropSpeed) {
         this.dropPiece();
         this.lastDropTime = currentTime;
       }
-      this.renderer.render();
     }
 
-    requestAnimationFrame(this.gameLoop);
+    this.renderer.render();
+
+    if (this.isGameOver) {
+      this.renderer.renderGameOver();
+      return;
+    }
+
+    this.animationFrameId = requestAnimationFrame(this.gameLoop);
   }
 
   dropPiece() {
@@ -188,17 +211,28 @@ export class TetrisGame {
   }
 
   updateScore(linesCleared) {
-    const linePoints = [0, 40, 100, 300, 1200];
-    this.score += linePoints[linesCleared] * this.level;
+    const basePoints = this.linePoints[linesCleared] ?? 0;
+    this.score += basePoints * this.level;
     this.lines += linesCleared;
     this.level = Math.floor(this.lines / 10) + 1;
-    this.dropSpeed = Math.max(50, 1000 - (this.level - 1) * 100);
+    this.dropSpeed = Math.max(
+      this.minDropSpeed,
+      this.baseDropSpeed - (this.level - 1) * this.dropAcceleration
+    );
     console.log(`🎉 Очищено линий: ${linesCleared}! Счет: ${this.score}`);
   }
 
   gameOver() {
+    if (this.isGameOver) {
+      return;
+    }
+
     this.isGameOver = true;
     console.log("💀 Игра окончена! Финальный счет:", this.score);
+    recordScore(this.score);
+    showLeaderboardOverlay({
+      statusMessage: `Вы проиграли! Ваш счет: ${this.score}`
+    });
   }
 
   updateUI() {
@@ -217,27 +251,38 @@ export class TetrisGame {
   }
 
   restartGame() {
-    if (this.dropInterval) {
-      clearInterval(this.dropInterval);
-    }
+    hideLeaderboardOverlay();
 
-    this.board = Array(this.BOARD_HEIGHT).fill().map(() => Array(this.BOARD_WIDTH).fill(0));
+    this.stopLoop();
+    this.board = this.createEmptyBoard();
     this.currentPiece = null;
-    this.nextPiece = null;
+    this.nextPieceTemplate = null;
     this.score = 0;
     this.level = 1;
     this.lines = 0;
     this.isGameOver = false;
     this.isPaused = false;
-    this.dropSpeed = 1000;
+    this.dropSpeed = this.baseDropSpeed;
 
     this.initializeGame();
   }
 
   stopGame() {
-    if (this.gameLoop) {
-      cancelAnimationFrame(this.gameLoop);
-    }
+    this.stopLoop();
     this.inputHandler.removeEventListeners();
+    window.removeEventListener('tetris-theme-change', this.themeChangeHandler);
+  }
+
+  stopLoop() {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+  }
+
+  updatePalette(colors) {
+    if (!Array.isArray(colors) || colors.length === 0) return;
+    this.colors = [...colors];
+    this.renderer.rebuildBlocks();
   }
 }

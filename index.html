@@ -4,56 +4,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Тетрис</title>
-  <link rel="stylesheet" href="tetris.styles.css">
+  <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
 
-<div class="game-container">
-  <canvas id="game-board" width="300" height="600"></canvas>
+<div class="panel login-container hidden" id="loginContainer">
+  <div class="subtitle">Введите имя для начала игры</div>
 
-  <div class="login-container">
-    <div class="subtitle">Введите имя для начала игры</div>
-
-    <form id="loginForm">
-      <div class="input-group">
-        <label for="username">Имя игрока:</label>
-        <input type="text" id="username" placeholder="Введите ваше имя" required>
-      </div>
-      <button type="submit" class="btn">Начать игру</button>
-    </form>
-
-    <div class="features">
-      <h3>Ваша статистика:</h3>
-      <ul>
-        <li>Рекорды и достижения</li>
-        <li>Таблица лидеров</li>
-        <li>История игр</li>
-        <li>Уровень мастерства</li>
-      </ul>
-    </div>
+  <div class="theme-switcher">
+    <label for="loginThemeSelector">Тема оформления</label>
+    <select id="loginThemeSelector" data-theme-selector></select>
   </div>
-  <div class="leaderboard hidden">
-    <h3>Таблица лидеров</h3>
-    <div class="leaderboard-list" id="leaderboardList">
-      <!-- Сюда будет вставляться лидерборд -->
-    </div>
 
-  <div class="info-panel">
+  <form id="loginForm">
+    <div class="input-group">
+      <label for="username">Имя игрока:</label>
+      <input type="text" id="username" placeholder="Введите ваше имя" required>
+    </div>
+    <button type="submit" class="btn">Начать игру</button>
+  </form>
+</div>
+
+<div class="game-container hidden" id="gameContainer">
+  <canvas id="game-board" width="300" height="600"></canvas>
+  <div class="panel info-panel" id="infoPanel">
     <h3>Статистика</h3>
     <div id="score">Счет: 0</div>
     <div id="level">Уровень: 1</div>
     <div id="lines">Линии: 0</div>
 
+    <div class="next-piece-preview">
+      <h4>Следующая фигура</h4>
+      <canvas id="next-piece-canvas" width="140" height="140" aria-label="Следующая фигура"></canvas>
+    </div>
+
     <div class="controls">
-      <button onclick="window.game?.pauseGame()">Пауза</button>
-      <button onclick="window.game?.restartGame()">Перезапуск</button>
+  <button type="button" class="btn" onclick="window.game?.pauseGame()">Пауза</button>
+  <button type="button" class="btn btn-secondary" onclick="window.game?.restartGame()">Перезапуск</button>
     </div>
 
     <div class="instructions">
       <h4>Управление:</h4>
-      <p>← → - Движение</p>
-      <p>↓ - Ускорить</p>
-      <p>Пробел - Поворот</p>
+      <p>← → — Движение</p>
+      <p>↓ — Ускорить</p>
+      <p>Пробел — Поворот</p>
+    </div>
+
+    <div class="theme-switcher">
+      <label for="themeSelector">Тема оформления</label>
+      <select id="themeSelector" data-theme-selector></select>
+    </div>
+  </div>
+</div>
+<button id="leaderboardToggle" class="btn btn-secondary btn-floating leaderboard-toggle hidden" type="button">🏆 Таблица лидеров</button>
+
+<div class="leaderboard-overlay hidden" id="leaderboardOverlay">
+  <div class="leaderboard-modal">
+    <button type="button" class="btn btn-link leaderboard-close" id="leaderboardClose" aria-label="Закрыть таблицу лидеров">×</button>
+    <h3 id="leaderboardTitle" class="leaderboard-title">Таблица лидеров</h3>
+    <p id="leaderboardStatus" class="leaderboard-status hidden"></p>
+    <div class="leaderboard-list" id="leaderboardList">
+      <p>Пока нет результатов</p>
     </div>
   </div>
 </div>

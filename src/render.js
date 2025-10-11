@@ -2,6 +2,8 @@ export class Renderer {
   constructor(game) {
     this.game = game;
     this.preRenderedBlocks = this.preRenderBlocks();
+    this.previewCanvas = document.getElementById('next-piece-canvas');
+    this.previewCtx = this.previewCanvas ? this.previewCanvas.getContext('2d') : null;
   }
 
   preRenderBlocks() {
@@ -13,6 +15,8 @@ export class Renderer {
 
     this.game.colors.forEach((color, index) => {
       if (index === 0) return;
+
+      tempCtx.clearRect(0, 0, this.game.BLOCK_SIZE, this.game.BLOCK_SIZE);
 
       tempCtx.fillStyle = color;
       tempCtx.fillRect(0, 0, this.game.BLOCK_SIZE, this.game.BLOCK_SIZE);
@@ -32,6 +36,71 @@ export class Renderer {
     });
 
     return blocks;
+  }
+
+  rebuildBlocks() {
+    this.preRenderedBlocks = this.preRenderBlocks();
+    this.renderNextPiece(this.game.nextPieceTemplate);
+  }
+
+  renderNextPiece(template) {
+    if (!this.previewCtx || !this.previewCanvas) return;
+
+    const ctx = this.previewCtx;
+    const canvas = this.previewCanvas;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!template || !template.matrix?.length) {
+      return;
+    }
+
+    const rows = template.matrix.length;
+    const cols = Math.max(...template.matrix.map((row) => row.length));
+    if (rows === 0 || cols === 0) return;
+
+    const padding = Math.floor(canvas.width * 0.1);
+    const availableWidth = canvas.width - padding * 2;
+    const availableHeight = canvas.height - padding * 2;
+    let blockSize = Math.floor(Math.min(availableWidth / cols, availableHeight / rows));
+    if (blockSize <= 0) {
+      blockSize = Math.floor(canvas.width / Math.max(rows, cols));
+    }
+
+    const usedWidth = cols * blockSize;
+    const usedHeight = rows * blockSize;
+    const offsetX = Math.floor((canvas.width - usedWidth) / 2);
+    const offsetY = Math.floor((canvas.height - usedHeight) / 2);
+
+    const colorIndex = template.colorIndex ?? 0;
+  const blockImage = this.preRenderedBlocks[colorIndex];
+    const fallbackColor = this.game.colors?.[colorIndex] ?? '#ffffff';
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+
+    for (let y = 0; y < rows; y++) {
+      const row = template.matrix[y];
+      for (let x = 0; x < row.length; x++) {
+        if (row[x] === 0) continue;
+        const drawX = offsetX + x * blockSize;
+        const drawY = offsetY + y * blockSize;
+
+        if (blockImage && blockImage.complete) {
+          ctx.drawImage(blockImage, drawX, drawY, blockSize, blockSize);
+        } else {
+          ctx.fillStyle = fallbackColor;
+          ctx.fillRect(drawX, drawY, blockSize, blockSize);
+
+          if (blockImage && !blockImage.complete) {
+            blockImage.addEventListener('load', () => {
+              this.renderNextPiece(template);
+            }, { once: true });
+          }
+        }
+      }
+    }
+
+    ctx.restore();
   }
 
   darkenColor(color, amount) {
@@ -112,15 +181,22 @@ export class Renderer {
   }
 
   renderGameOver() {
-    this.game.ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    const rootStyles = getComputedStyle(document.documentElement);
+    const overlayColor = rootStyles.getPropertyValue('--leaderboard-overlay').trim() || 'rgba(0, 0, 0, 0.85)';
+    const textColor = rootStyles.getPropertyValue('--color-text').trim() || '#ffffff';
+    const accentColor = rootStyles.getPropertyValue('--color-accent').trim() || '#4caf50';
+    const fontSans = rootStyles.getPropertyValue('--font-sans').replaceAll('"', '').trim() || 'Inter, sans-serif';
+
+    this.game.ctx.fillStyle = overlayColor;
     this.game.ctx.fillRect(0, 0, this.game.canvas.width, this.game.canvas.height);
 
-    this.game.ctx.fillStyle = '#FFF';
-    this.game.ctx.font = 'bold 28px Arial';
     this.game.ctx.textAlign = 'center';
+    this.game.ctx.fillStyle = textColor;
+    this.game.ctx.font = `bold 28px ${fontSans}`;
     this.game.ctx.fillText('ИГРА ОКОНЧЕНА', this.game.canvas.width / 2, this.game.canvas.height / 2 - 30);
 
-    this.game.ctx.font = '20px Arial';
+    this.game.ctx.font = `600 20px ${fontSans}`;
+    this.game.ctx.fillStyle = accentColor;
     this.game.ctx.fillText(`Счет: ${this.game.score}`, this.game.canvas.width / 2, this.game.canvas.height / 2 + 10);
     this.game.ctx.fillText(`Уровень: ${this.game.level}`, this.game.canvas.width / 2, this.game.canvas.height / 2 + 40);
   }
