@@ -1,0 +1,74 @@
+<%- include('partials/header') %>
+
+<main class="container card-page">
+  <a href="/">← Все книги</a>
+  <h1><%= book.title %></h1>
+  <p><strong>Автор:</strong> <%= book.author %></p>
+  <p><strong>Год:</strong> <%= book.year %></p>
+
+  <p>
+    <strong>Статус:</strong>
+    <% if (book.available) { %>
+      В библиотеке
+    <% } else { %>
+      Выдана: <%= book.borrower %> (до <%= book.dueDate %>)
+    <% } %>
+  </p>
+
+  <section class="card-actions">
+    <% if (book.available) { %>
+      <button id="openBorrow">Выдать</button>
+    <% } else { %>
+      <form method="post" action="/api/books/<%= book.id %>/return" id="returnForm">
+        <button type="button" id="doReturn">Вернуть</button>
+      </form>
+    <% } %>
+    <a href="#" id="editLink">Редактировать</a>
+    <button id="deleteBtn">Удалить</button>
+  </section>
+
+  <dialog id="editDialog">
+    <form method="dialog" id="editForm">
+      <h3>Редактировать</h3>
+      <label>Название<br><input id="e_title" value="<%= book.title %>"></label>
+      <label>Автор<br><input id="e_author" value="<%= book.author %>"></label>
+      <label>Год<br><input id="e_year" type="number" value="<%= book.year %>"></label>
+      <menu>
+        <button id="saveEdit">Сохранить</button>
+        <button id="cancelEdit">Отмена</button>
+      </menu>
+    </form>
+  </dialog>
+
+</main>
+
+<script>
+document.getElementById('deleteBtn').addEventListener('click', async ()=>{
+  if(!confirm('Удалить книгу?')) return;
+  const res = await fetch('/api/books/<%= book.id %>', { method: 'DELETE' });
+  if(res.ok) location.href = '/';
+  else alert('Ошибка удаления');
+});
+
+document.getElementById('openBorrow')?.addEventListener('click', ()=>{
+  const d = document.getElementById('borrowInline');
+});
+
+document.getElementById('doReturn')?.addEventListener('click', async ()=>{
+  const res = await fetch('/api/books/<%= book.id %>/return', { method: 'POST' });
+  if(res.ok) location.reload(); else alert('Ошибка');
+});
+
+document.getElementById('editLink').addEventListener('click', ()=>{
+  const ed = document.getElementById('editDialog');
+  ed.showModal();
+});
+
+document.getElementById('saveEdit').addEventListener('click', async ()=>{
+  const body = { title: document.getElementById('e_title').value, author: document.getElementById('e_author').value, year: document.getElementById('e_year').value };
+  const res = await fetch('/api/books/<%= book.id %>', { method: 'PUT', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+  if(res.ok) location.reload(); else alert('Ошибка');
+});
+</script>
+
+<%- include('partials/footer') %>

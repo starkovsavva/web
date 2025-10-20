@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "title": "Война и мир",
+    "author": "Л.Н. Толстой",
+    "year": 1869,
+    "available": false,
+    "borrower": "savva",
+    "dueDate": ""
+  },
+  {
+    "id": 2,
+    "title": "Мастер и Маргарита",
+    "author": "М. Булгаков",
+    "year": 1966,
+    "available": false,
+    "borrower": "Пидарас",
+    "dueDate": "2025-10-13"
+  },
+  {
+    "id": 3,
+    "title": "sd",
+    "author": "ds",
+    "year": "",
+    "available": true,
+    "borrower": "",
+    "dueDate": ""
+  },
+  {
+    "id": 4,
+    "title": "ваа",
+    "author": "а",
+    "year": "2",
+    "available": false,
+    "borrower": "ываыва",
+    "dueDate": ""
+  },
+  {
+    "id": 5,
+    "title": "New",
+    "author": "Me",
+    "year": "2005",
+    "available": true,
+    "borrower": "",
+    "dueDate": ""
+  }
+]

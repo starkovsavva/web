@@ -1,0 +1,101 @@
+
+/* Windows 95 inspired stylesheet */
+:root{
+  --bg:#c0c0c0;       /* classic gray window background */
+  --panel:#e0e0e0;    /* lighter panel color */
+  --button:#d4d0c8;   /* button face */
+  --button-dark:#404040; /* dark text on controls */
+  --accent:#000080;   /* blue accents (titles) */
+}
+
+/* Use Tahoma/Segoe UI fallback for retro system font */
+body{
+  font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+  background: var(--bg);
+  margin: 0;
+  color: #000;
+}
+
+.container{
+  max-width: 960px;
+  margin: 20px auto;
+  padding: 12px;
+}
+
+/* Panels look like classic dialog panes */
+.panel{
+  background: var(--panel);
+  border: 2px solid #808080; /* outer border */
+  padding: 10px;
+  box-shadow: none;
+}
+
+/* Grid of cards */
+.books.grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+  gap: 10px;
+}
+
+.book{
+  background: var(--panel);
+  padding: 10px;
+  border: 2px solid #808080;    /* classic sunken border */
+  box-shadow: inset 1px 1px 0 #ffffff, inset -1px -1px 0 #000000;
+}
+
+.book h3{
+  margin: 0 0 6px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.book .meta{font-size:0.9em;color:#000}
+
+/* Beveled buttons like Win95 */
+.actions{display:flex;gap:8px;margin-top:8px}
+
+button{
+  appearance: none;
+  background: linear-gradient(#f0f0f0, #d4d0c8);
+  color: var(--button-dark);
+  border:2px solid #808080;
+  padding:6px 10px;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #000000 inset;
+}
+
+button:active{
+  box-shadow: -1px -1px 0 #ffffff inset, 1px 1px 0 #000000 inset;
+}
+
+button.secondary{
+  background: linear-gradient(#f8f8f8, #dcd8cf);
+}
+
+/* Inputs — squared, with classic 2px bevel effect */
+input, select, textarea{
+  padding:6px 8px;
+  border:2px solid #808080;
+  background: #fff;
+  box-shadow: 1px 1px 0 #ffffff inset, -1px -1px 0 #000000 inset;
+  border-radius:0;
+  font-family:inherit;
+}
+
+label{display:block;margin-bottom:8px}
+
+/* Titlebar like header (optional) */
+.titlebar{
+  background: linear-gradient(#000080,#000060);
+  color: white;
+  padding:6px 8px;
+  font-weight:700;
+}
+
+/* Small screens: keep layout but stack controls */
+@media screen and (max-width:600px){
+  .controls{flex-direction:column;align-items:flex-start}
+  .books.grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+}

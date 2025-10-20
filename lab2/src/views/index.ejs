@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+
+<main class="container">
+  <h1>Домашняя библиотека</h1>
+
+  <section class="controls">
+    <label><input type="checkbox" id="filterAvailable"> Только в наличии</label>
+    <label><input type="checkbox" id="filterOverdue"> Просроченные</label>
+    <button id="refresh">Обновить</button>
+    <button id="addBook">Добавить книгу</button>
+  </section>
+
+  <section id="booksList" class="books grid"></section>
+
+  <dialog id="bookDialog">
+    <form method="dialog" id="bookForm">
+      <h3 id="dialogTitle">Добавить книгу</h3>
+      <input type="hidden" id="bookId">
+      <label>Название<br><input id="title"></label>
+      <label>Автор<br><input id="author"></label>
+      <label>Год<br><input id="year" type="number"></label>
+      <menu>
+        <button id="saveBook">Сохранить</button>
+        <button id="cancel">Отмена</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="borrowDialog">
+    <form method="dialog" id="borrowForm">
+      <h3>Выдать книгу</h3>
+      <input type="hidden" id="borrowBookId">
+      <label>Имя читателя<br><input id="borrower"></label>
+      <label>Дата возврата<br><input id="dueDate" type="date"></label>
+      <menu>
+        <button id="doBorrow">Выдать</button>
+        <button id="cancelBorrow">Отмена</button>
+      </menu>
+    </form>
+  </dialog>
+
+</main>
+
+<script src="/public/js/main.js"></script>
+<%- include('partials/footer') %>
